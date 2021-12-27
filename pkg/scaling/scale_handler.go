@@ -126,6 +126,7 @@ func (h *scaleHandler) DeleteScalableObject(ctx context.Context, scalableObject 
 			cancel()
 		}
 		h.scaleLoopContexts.Delete(key)
+		delete(h.scalerCaches, key)
 		h.recorder.Event(withTriggers, corev1.EventTypeNormal, eventreason.KEDAScalersStopped, "Stopped scalers watch")
 	} else {
 		h.logger.V(1).Info("ScaleObject was not found in controller cache", "key", key)

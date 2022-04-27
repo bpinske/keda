@@ -191,14 +191,19 @@ func (s *graphiteScaler) ExecuteGrapQuery() (float64, error) {
 	}
 
 	// https://graphite-api.readthedocs.io/en/latest/api.html#json
+    // Should be impossible
 	if len(result[0].Datapoints) == 0 {
 		return 0, nil
 	}
+ 
+	// Return the most recent non-null datapoint
+	for i := len(result[0].Datapoints)-1); i >= 0; i-- {
+		if datapoint := result[0].Datapoints[i][0]; datapoint != nil {
+			return datapoint, nil
+		}
+	 }
 
-	latestDatapoint := len(result[0].Datapoints) - 1
-	datapoint := result[0].Datapoints[latestDatapoint][0]
-
-	return datapoint, nil
+	return -1, fmt.Errorf("No valid non-null response, try increasing your queryTime or check your query", s.metadata.query)
 }
 
 func (s *graphiteScaler) GetMetrics(ctx context.Context, metricName string, metricSelector labels.Selector) ([]external_metrics.ExternalMetricValue, error) {

@@ -48,7 +48,7 @@ type graphiteMetadata struct {
 type grapQueryResult []struct {
 	Target     string                 `json:"target"`
 	Tags       map[string]interface{} `json:"tags"`
-	Datapoints [][]float64            `json:"datapoints"`
+	Datapoints [][]*float64           `json:"datapoints,omitempty"`
 }
 
 var graphiteLog = logf.Log.WithName("graphite_scaler")
@@ -191,19 +191,19 @@ func (s *graphiteScaler) ExecuteGrapQuery() (float64, error) {
 	}
 
 	// https://graphite-api.readthedocs.io/en/latest/api.html#json
-    // Should be impossible
+	// Should be impossible
 	if len(result[0].Datapoints) == 0 {
 		return 0, nil
 	}
- 
-	// Return the most recent non-null datapoint
-	for i := len(result[0].Datapoints)-1); i >= 0; i-- {
-		if datapoint := result[0].Datapoints[i][0]; datapoint != nil {
-			return datapoint, nil
-		}
-	 }
 
-	return -1, fmt.Errorf("No valid non-null response, try increasing your queryTime or check your query", s.metadata.query)
+	// Return the most recent non-null datapoint
+	for i := len(result[0].Datapoints) - 1; i >= 0; i-- {
+		if datapoint := result[0].Datapoints[i][0]; datapoint != nil {
+			return *datapoint, nil
+		}
+	}
+
+	return -1, fmt.Errorf("No valid non-null response in query %s, try increasing your queryTime or check your query", s.metadata.query)
 }
 
 func (s *graphiteScaler) GetMetrics(ctx context.Context, metricName string, metricSelector labels.Selector) ([]external_metrics.ExternalMetricValue, error) {
